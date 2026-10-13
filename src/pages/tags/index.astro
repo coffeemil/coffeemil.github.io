@@ -1,0 +1,155 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+
+const tagMap = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
+  }
+}
+
+const tags = [...tagMap.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const max = Math.max(1, ...tags.map(([, c]) => c));
+---
+
+<BaseLayout title="标签" description="全部标签 —— 标记索引">
+  <div class="wrap page-head">
+    <p class="page-head__kicker mono">「标 记 索 引」</p>
+    <h1 class="page-head__title">标记索引</h1>
+    <p class="page-head__desc">
+      共 <strong>{tags.length}</strong> 个标记，覆盖 {posts.length} 篇记录。
+    </p>
+  </div>
+
+  <div class="wrap">
+    {
+      tags.length > 0 ? (
+        <ul class="tag-list">
+          {tags.map(([tag, count]) => (
+            <li class="tag-list__item reveal">
+              <a class="tag-list__link panel panel--hover" href={`/tags/${encodeURIComponent(tag)}/`}>
+                <span class="tag-list__hash mono">#</span>
+                <span class="tag-list__name">{tag}</span>
+                <span class="tag-list__count mono">{String(count).padStart(2, '0')}</span>
+                <span class="tag-list__bar" style={`--w:${(count / max) * 100}%`} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="empty mono">尚未题下任何签条……</p>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head {
+    padding: 56px 24px 40px;
+    text-align: center;
+  }
+
+  .page-head__kicker {
+    margin: 0 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--neon-amber);
+  }
+
+  .page-head__title {
+    margin: 0 0 14px;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 6vw, 46px);
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    background: linear-gradient(100deg, #7c2d12, #92400e 55%, #78350f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 20px rgba(156, 61, 46, 0.45));
+  }
+
+  .page-head__desc {
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--text-muted);
+  }
+
+  .page-head__desc strong {
+    color: var(--neon-gold);
+  }
+
+  .tag-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tag-list__link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 18px;
+    overflow: hidden;
+    color: inherit;
+  }
+
+  .tag-list__link:hover {
+    color: inherit;
+    text-shadow: none;
+  }
+
+  .tag-list__hash {
+    color: var(--neon-amber);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .tag-list__name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: color 0.22s ease;
+  }
+
+  .tag-list__link:hover .tag-list__name {
+    color: var(--neon-gold);
+  }
+
+  .tag-list__count {
+    margin-left: auto;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .tag-list__bar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    width: var(--w);
+    background: linear-gradient(90deg, var(--neon-amber), var(--neon-gold));
+    opacity: 0.55;
+    transition: opacity 0.22s ease;
+  }
+
+  .tag-list__link:hover .tag-list__bar {
+    opacity: 1;
+    box-shadow: var(--glow-gold);
+  }
+
+  .empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+  }
+</style>

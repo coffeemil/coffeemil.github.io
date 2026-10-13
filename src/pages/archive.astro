@@ -1,0 +1,234 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+interface YearGroup {
+  year: number;
+  months: { month: number; posts: typeof posts }[];
+}
+
+const byYear = new Map<number, Map<number, typeof posts>>();
+for (const post of posts) {
+  const y = post.data.pubDate.getFullYear();
+  const m = post.data.pubDate.getMonth() + 1;
+  if (!byYear.has(y)) byYear.set(y, new Map());
+  const months = byYear.get(y)!;
+  if (!months.has(m)) months.set(m, []);
+  months.get(m)!.push(post);
+}
+
+const groups: YearGroup[] = [...byYear.entries()]
+  .sort((a, b) => b[0] - a[0])
+  .map(([year, months]) => ({
+    year,
+    months: [...months.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([month, list]) => ({ month, posts: list })),
+  }));
+
+const total = posts.length;
+---
+
+<BaseLayout title="归档" description="按时间归档的全部文章">
+  <div class="wrap page-head">
+    <p class="page-head__kicker mono">「时 间 线」</p>
+    <h1 class="page-head__title">时间线</h1>
+    <p class="page-head__desc">
+      共 <strong>{total}</strong> 篇记录，横跨 {groups.length} 个年份。
+    </p>
+  </div>
+
+  <div class="wrap wrap--narrow">
+    {
+      groups.map((group) => (
+        <section class="year reveal">
+          <h2 class="year__title">
+            <span class="year__num mono">{group.year}</span>
+            <span class="year__line" />
+            <span class="year__count mono">
+              {group.months.reduce((n, m) => n + m.posts.length, 0)} 篇
+            </span>
+          </h2>
+
+          {group.months.map((m) => (
+            <div class="month">
+              <p class="month__label mono">{String(m.month).padStart(2, '0')} 月</p>
+              <ul class="month__list">
+                {m.posts.map((post) => (
+                  <li class="entry">
+                    <time class="entry__date mono" datetime={post.data.pubDate.toISOString()}>
+                      {post.data.pubDate.toISOString().slice(5, 10)}
+                    </time>
+                    <a class="entry__link" href={`/posts/${post.id}/`}>
+                      {post.data.title}
+                    </a>
+                    <span class="entry__tags">
+                      {post.data.tags.slice(0, 2).map((t) => (
+                        <span class="entry__tag mono">#{t}</span>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ))
+    }
+
+    {
+      total === 0 && <p class="empty mono">时间线上空无一物……</p>
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head {
+    padding: 56px 24px 40px;
+    text-align: center;
+  }
+
+  .page-head__kicker {
+    margin: 0 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--neon-amber);
+  }
+
+  .page-head__title {
+    margin: 0 0 14px;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 6vw, 46px);
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    background: linear-gradient(100deg, #7c2d12, #92400e 55%, #78350f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 20px rgba(156, 61, 46, 0.45));
+  }
+
+  .page-head__desc {
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--text-muted);
+  }
+
+  .page-head__desc strong {
+    color: var(--neon-gold);
+  }
+
+  .year {
+    margin-bottom: 46px;
+  }
+
+  .year__title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 0 22px;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .year__num {
+    color: var(--neon-gold);
+    text-shadow: var(--glow-gold);
+    letter-spacing: 0.06em;
+  }
+
+  .year__line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--line-strong), transparent);
+  }
+
+  .year__count {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .month {
+    margin-bottom: 22px;
+    padding-left: 18px;
+    border-left: 1px solid var(--line);
+  }
+
+  .month__label {
+    margin: 0 0 10px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--neon-amber);
+  }
+
+  .month__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .entry {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 7px 0;
+    border-bottom: 1px dashed rgba(156, 61, 46, 0.12);
+  }
+
+  .entry:last-child {
+    border-bottom: none;
+  }
+
+  .entry__date {
+    flex: none;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+
+  .entry__link {
+    font-size: 15px;
+    color: var(--text-secondary);
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+
+  .entry__link:hover {
+    color: var(--neon-gold);
+    transform: translateX(3px);
+  }
+
+  .entry__tags {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+
+  .entry__tag {
+    font-size: 11.5px;
+    color: var(--text-dim);
+  }
+
+  .empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+  }
+
+  @media (max-width: 560px) {
+    .entry {
+      flex-wrap: wrap;
+      gap: 6px 12px;
+    }
+
+    .entry__tags {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+</style>

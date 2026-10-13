@@ -1,0 +1,68 @@
+---
+import { NAV_LINKS, SITE } from '../consts';
+import Sigil from './Sigil.astro';
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href);
+---
+
+<header class="nav">
+  <div class="nav__inner">
+    <a class="nav__brand" href="/">
+      <Sigil class="nav__sigil" size={30} />
+      <span class="nav__brand-text">{SITE.title}</span>
+    </a>
+
+    <button
+      class="nav__toggle"
+      type="button"
+      aria-label="切换导航菜单"
+      aria-expanded="false"
+      aria-controls="nav-links"
+      data-nav-toggle
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
+
+    <ul class="nav__links" id="nav-links" data-nav-links>
+      {
+        NAV_LINKS.map((link) => (
+          <li>
+            <a
+              class="nav__link"
+              href={link.href}
+              aria-current={isActive(link.href) ? 'page' : undefined}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</header>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+  const links = document.querySelector<HTMLElement>('[data-nav-links]');
+
+  if (toggle && links) {
+    toggle.addEventListener('click', () => {
+      const open = links.dataset.open === 'true';
+      links.dataset.open = String(!open);
+      toggle.setAttribute('aria-expanded', String(!open));
+    });
+
+    links.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) {
+        links.dataset.open = 'false';
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+</script>

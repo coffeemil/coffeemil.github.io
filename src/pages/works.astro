@@ -1,0 +1,224 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+interface Work {
+  title: string;
+  kicker: string;
+  desc: string;
+  tags: string[];
+  /** 直接试玩地址（新标签页打开） */
+  play: string;
+  /** 详情页 */
+  detail: string;
+  year: string;
+}
+
+const works: Work[] = [
+  {
+    title: 'Redline1612N',
+    kicker: 'CANVAS 手作 · 单文件 · 无依赖',
+    desc: '按住屏幕刹车，松手加速。刹车力度超过 1612 就会断裂 —— 在弯道与极限之间，寻找那条唯一的生路。',
+    tags: ['Canvas', 'TypeScript', '手感调教'],
+    play: 'https://redline-1612n.vercel.app/',
+    detail: '/game',
+    year: '2026',
+  },
+];
+---
+
+<BaseLayout title="造物" description="我的造物 —— 亲手写下的作品">
+  <div class="wrap page-head">
+    <p class="page-head__kicker mono">「造 物 录」</p>
+    <h1 class="page-head__title">我的造物</h1>
+    <p class="page-head__desc">
+      共 <strong>{works.length}</strong> 件作品，皆为亲手所写。
+    </p>
+  </div>
+
+  <div class="wrap">
+    <ul class="works">
+      {
+        works.map((w, i) => (
+          <li class="work panel panel--hover corner-frame reveal">
+            <div class="work__body">
+              <p class="work__meta mono">
+                <span class="work__index">#{String(i + 1).padStart(2, '0')}</span>
+                <span class="work__year">{w.year}</span>
+              </p>
+
+              <h2 class="work__title">{w.title}</h2>
+              <p class="work__kicker mono">{w.kicker}</p>
+              <p class="work__desc">{w.desc}</p>
+
+              <ul class="work__tags">
+                {w.tags.map((t) => (
+                  <li class="chip">#{t}</li>
+                ))}
+              </ul>
+
+              <div class="work__actions">
+                <a
+                  class="btn btn--primary"
+                  href={w.play}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  即刻试玩
+                  <svg
+                    class="btn__icon"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M7 17 17 7" />
+                    <path d="M8 7h9v9" />
+                  </svg>
+                </a>
+                <a class="btn btn--ghost" href={w.detail}>
+                  查看详情
+                  <svg
+                    class="btn__icon"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m13 6 6 6-6 6" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head {
+    padding: 56px 24px 40px;
+    text-align: center;
+  }
+
+  .page-head__kicker {
+    margin: 0 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--neon-amber);
+  }
+
+  .page-head__title {
+    margin: 0 0 14px;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 6vw, 46px);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    background: linear-gradient(100deg, #b45309, #92400e 55%, #78350f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .page-head__desc {
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--text-muted);
+  }
+
+  .page-head__desc strong {
+    color: var(--neon-amber);
+  }
+
+  .works {
+    display: grid;
+    gap: 22px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .work {
+    display: block;
+    overflow: hidden;
+  }
+
+  /* ---------- 内容 ---------- */
+  .work__body {
+    padding: 26px 28px;
+  }
+
+  .work__meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 10px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .work__index {
+    color: var(--neon-amber);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .work__title {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+  }
+
+  .work__kicker {
+    margin: 0 0 14px;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
+    color: var(--neon-amber);
+  }
+
+  .work__desc {
+    margin: 0 0 16px;
+    font-size: 14.5px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .work__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 0 0 20px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .work__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 760px) {
+    .work__body {
+      padding: 22px 20px;
+    }
+  }
+</style>

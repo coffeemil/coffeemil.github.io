@@ -1,0 +1,317 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CHUNIBYO_LEVELS } from '../../consts';
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+
+const dateStr = post.data.pubDate.toISOString().slice(0, 10);
+const updatedStr = post.data.updatedDate?.toISOString().slice(0, 10);
+const levelText = CHUNIBYO_LEVELS[post.data.chunibyo] ?? '工笔';
+
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+
+const allPosts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+const idx = allPosts.findIndex((p) => p.id === post.id);
+const prev = allPosts[idx + 1];
+const next = allPosts[idx - 1];
+---
+
+<BaseLayout title={post.data.title} description={post.data.description} type="article">
+  <article class="wrap wrap--narrow post">
+    <header class="post__header">
+      <p class="post__kicker mono">
+        <a href="/posts">「档案」</a>
+        <span class="post__sep">/</span>
+        <span>{post.data.category}</span>
+      </p>
+
+      <h1 class="post__title">{post.data.title}</h1>
+
+      <p class="post__desc">{post.data.description}</p>
+
+      <div class="post__meta">
+        <time class="mono" datetime={post.data.pubDate.toISOString()}>{dateStr}</time>
+        {updatedStr && <span class="mono post__updated">修订于 {updatedStr}</span>}
+        <span class="post__level" title={`笔记等级 ${post.data.chunibyo}/5`}>
+          {'★'.repeat(post.data.chunibyo)}<span class="post__level-dim">
+            {'★'.repeat(5 - post.data.chunibyo)}
+          </span>
+          <em>{levelText}</em>
+        </span>
+      </div>
+
+      {
+        post.data.tags.length > 0 && (
+          <ul class="post__tags">
+            {post.data.tags.map((tag) => (
+              <li>
+                <a class="chip chip--amber" href={`/tags/${encodeURIComponent(tag)}/`}>
+                  #{tag}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+
+    {
+      toc.length > 2 && (
+        <nav class="post__toc panel" aria-label="目录">
+          <p class="post__toc-title mono">「目 录」</p>
+          <ol>
+            {toc.map((h) => (
+              <li class={`post__toc-item post__toc-item--h${h.depth}`}>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+
+    <div class="prose post__body">
+      <Content />
+    </div>
+
+    <nav class="post__nav" aria-label="文章导航">
+      {
+        prev ? (
+          <a class="post__nav-link panel panel--hover" href={`/posts/${prev.id}/`}>
+            <span class="post__nav-label mono">← 上一篇</span>
+            <span class="post__nav-title">{prev.data.title}</span>
+          </a>
+        ) : (
+          <span class="post__nav-link post__nav-link--empty mono">已是最早的记录</span>
+        )
+      }
+      {
+        next ? (
+          <a
+            class="post__nav-link panel panel--hover post__nav-link--right"
+            href={`/posts/${next.id}/`}
+          >
+            <span class="post__nav-label mono">下一篇 →</span>
+            <span class="post__nav-title">{next.data.title}</span>
+          </a>
+        ) : (
+          <span class="post__nav-link post__nav-link--empty mono">已是最新的记录</span>
+        )
+      }
+    </nav>
+
+    <p class="post__back">
+      <a class="btn btn--ghost" href="/posts">返回档案</a>
+    </p>
+  </article>
+</BaseLayout>
+
+<style>
+  .post {
+    padding-top: 52px;
+  }
+
+  .post__header {
+    margin-bottom: 34px;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .post__kicker {
+    margin: 0 0 16px;
+    font-size: 12.5px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+
+  .post__kicker a {
+    color: var(--neon-amber);
+  }
+
+  .post__sep {
+    margin: 0 8px;
+    color: var(--text-dim);
+  }
+
+  .post__title {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 900;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
+    color: var(--text-primary);
+    text-shadow: 0 0 30px rgba(156, 61, 46, 0.35);
+  }
+
+  .post__desc {
+    margin: 0 0 20px;
+    font-size: 15.5px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .post__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .post__updated {
+    color: var(--text-dim);
+  }
+
+  .post__level {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--neon-gold);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .post__level-dim {
+    color: var(--text-dim);
+  }
+
+  .post__level em {
+    font-style: normal;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    letter-spacing: 0;
+  }
+
+  .post__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* ---------- 目录 ---------- */
+  .post__toc {
+    margin-bottom: 34px;
+    padding: 18px 22px;
+  }
+
+  .post__toc-title {
+    margin: 0 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--neon-gold);
+  }
+
+  .post__toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: toc;
+  }
+
+  .post__toc-item {
+    counter-increment: toc;
+    font-size: 14px;
+    line-height: 1.9;
+  }
+
+  .post__toc-item a {
+    color: var(--text-secondary);
+  }
+
+  .post__toc-item a::before {
+    content: counter(toc, decimal-leading-zero) ' ';
+    margin-right: 8px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+  }
+
+  .post__toc-item a:hover {
+    color: var(--neon-gold);
+  }
+
+  .post__toc-item--h3 {
+    padding-left: 22px;
+    font-size: 13.5px;
+  }
+
+  /* ---------- 上下篇 ---------- */
+  .post__nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 56px;
+  }
+
+  .post__nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 16px 20px;
+    color: inherit;
+  }
+
+  .post__nav-link:hover {
+    color: inherit;
+    text-shadow: none;
+  }
+
+  .post__nav-link--right {
+    text-align: right;
+  }
+
+  .post__nav-link--empty {
+    justify-content: center;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+
+  .post__nav-label {
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    color: var(--neon-amber);
+  }
+
+  .post__nav-title {
+    font-size: 14.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+
+  .post__back {
+    margin: 40px 0 0;
+    text-align: center;
+  }
+
+  @media (max-width: 620px) {
+    .post__nav {
+      grid-template-columns: 1fr;
+    }
+
+    .post__nav-link--right {
+      text-align: left;
+    }
+  }
+</style>

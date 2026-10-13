@@ -1,0 +1,22 @@
+---
+import { SITE } from '../consts';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="wrap footer__inner">
+    <p class="footer__copy mono">
+      © 2022–{year} {SITE.title}
+    </p>
+
+    <p class="footer__note">本站由咖啡驱动，偶尔由 bug 驱动。</p>
+
+    <ul class="footer__links">
+      <li><a href={SITE.social.github} target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      <li><a href="/rss.xml">RSS</a></li>
+    </ul>
+
+    <p class="footer__powered mono">Powered by WordPress.</p>
+  </div>
+</footer>

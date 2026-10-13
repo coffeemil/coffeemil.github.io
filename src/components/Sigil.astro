@@ -1,0 +1,25 @@
+---
+/**
+ * 站点标志 —— 统一引用 public/favicon.svg
+ * 用 <img> 而非内联，避免 557KB 的 SVG 在每页重复嵌入
+ */
+interface Props {
+  size?: number;
+  class?: string;
+  style?: string;
+  /** 无障碍描述；默认装饰性（aria-hidden） */
+  alt?: string;
+}
+const { size = 30, class: className = '', style, alt } = Astro.props;
+---
+
+<img
+  class={className}
+  style={style}
+  src="/favicon.svg"
+  width={size}
+  height={size}
+  alt={alt ?? ''}
+  aria-hidden={alt ? undefined : 'true'}
+  decoding="async"
+/>

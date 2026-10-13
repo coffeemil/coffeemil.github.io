@@ -1,0 +1,107 @@
+---
+/**
+ * 粒子星空背景 —— Canvas 实现
+ * 仅保留偶发流星（星星已移除）
+ */
+---
+
+<canvas id="starfield" aria-hidden="true"></canvas>
+
+<script>
+  (function () {
+    const canvas = document.getElementById('starfield') as HTMLCanvasElement | null;
+    if (!canvas) return;
+
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    // 绑定为非空引用，避免闭包内丢失类型收窄
+    const cv: HTMLCanvasElement = canvas;
+    const ctx: CanvasRenderingContext2D = context;
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let W = 0;
+    let H = 0;
+    let DPR = 1;
+
+    interface Meteor {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      maxLife: number;
+    }
+
+    let meteors: Meteor[] = [];
+
+    function resize() {
+      DPR = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      cv.width = Math.floor(W * DPR);
+      cv.height = Math.floor(H * DPR);
+      cv.style.width = W + 'px';
+      cv.style.height = H + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+
+    function spawnMeteor() {
+      const fromLeft = Math.random() > 0.5;
+      const speed = 5 + Math.random() * 5;
+      meteors.push({
+        x: fromLeft ? -60 : W + 60,
+        y: Math.random() * H * 0.55,
+        vx: (fromLeft ? 1 : -1) * speed,
+        vy: speed * (0.35 + Math.random() * 0.35),
+        life: 0,
+        maxLife: 70 + Math.random() * 50,
+      });
+    }
+
+    let lastMeteor = 0;
+
+    function draw(t: number) {
+      ctx.clearRect(0, 0, W, H);
+
+      // 流星
+      if (t - lastMeteor > 4200 && Math.random() < 0.02) {
+        spawnMeteor();
+        lastMeteor = t;
+      }
+
+      meteors = meteors.filter((m) => m.life < m.maxLife);
+      for (const m of meteors) {
+        m.life++;
+        m.x += m.vx;
+        m.y += m.vy;
+        const fade = 1 - m.life / m.maxLife;
+        const tailX = m.x - m.vx * 9;
+        const tailY = m.y - m.vy * 9;
+
+        const grad = ctx.createLinearGradient(tailX, tailY, m.x, m.y);
+        grad.addColorStop(0, 'rgba(60, 52, 40, 0)');
+        grad.addColorStop(0.6, `rgba(90, 78, 60, ${0.3 * fade})`);
+        grad.addColorStop(1, `rgba(40, 34, 26, ${0.5 * fade})`);
+
+        ctx.beginPath();
+        ctx.moveTo(tailX, tailY);
+        ctx.lineTo(m.x, m.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.8;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    if (!reduceMotion) {
+      requestAnimationFrame(draw);
+    }
+  })();
+</script>

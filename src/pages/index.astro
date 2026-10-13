@@ -1,0 +1,415 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import { SITE } from '../consts';
+
+const allPosts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const featured = allPosts.filter((p) => p.data.featured);
+const latest = (featured.length > 0 ? featured : allPosts).slice(0, 6);
+
+const tagCount = new Map<string, number>();
+for (const post of allPosts) {
+  for (const tag of post.data.tags) {
+    tagCount.set(tag, (tagCount.get(tag) ?? 0) + 1);
+  }
+}
+const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+
+const stats = [
+  { label: 'POSTS', value: allPosts.length },
+  { label: 'TAGS', value: tagCount.size },
+  { label: 'WORKS', value: 1 },
+];
+---
+
+<BaseLayout>
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap hero__inner">
+      <h1 class="hero__title reveal">
+        <span class="glitch" data-text={SITE.heroTitle}>{SITE.heroTitle}</span>
+      </h1>
+
+      <p class="hero__subtitle mono reveal">{SITE.heroSubtitle}</p>
+
+      <p class="hero__eyebrow mono reveal">
+        <span class="hero__dot"></span>
+        持续记录中 · 欢迎翻阅
+      </p>
+
+      <p class="hero__incantation reveal cursor-blink">{SITE.incantation}</p>
+
+      <ul class="hero__stats reveal">
+        {
+          stats.map((s) => (
+            <li class="hero__stat">
+              <span class="hero__stat-value mono">{String(s.value).padStart(2, '0')}</span>
+              <span class="hero__stat-label mono">{s.label}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 最新文章 ============ -->
+  <section class="wrap section">
+    <div class="section-head reveal">
+      <h2 class="section-head__title">最新文章</h2>
+      <span class="section-head__line"></span>
+      <a class="section-head__more" href="/posts">全部文章 →</a>
+    </div>
+
+    {
+      latest.length > 0 ? (
+        <div class="post-grid">
+          {latest.map((post, i) => (
+            <PostCard
+              href={`/posts/${post.id}/`}
+              title={post.data.title}
+              description={post.data.description}
+              pubDate={post.data.pubDate}
+              tags={post.data.tags}
+              category={post.data.category}
+              chunibyo={post.data.chunibyo}
+              index={i + 1}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="empty mono">边界之内，尚无记录……</p>
+      )
+    }
+  </section>
+
+  <!-- ============ 游戏入口 ============ -->
+  <section class="wrap section">
+    <div class="section-head reveal">
+      <h2 class="section-head__title">我的造物</h2>
+      <span class="section-head__line"></span>
+      <a class="section-head__more" href="/works">全部造物 →</a>
+    </div>
+
+    <article class="game-card panel panel--hover corner-frame reveal">
+      <div class="game-card__body">
+        <p class="game-card__kicker mono">CANVAS 手作 · 单文件 · 无依赖</p>
+        <h3 class="game-card__title">
+          <a class="game-card__link" href="/game">Redline1612N</a>
+        </h3>
+        <p class="game-card__desc">
+          按住屏幕刹车，松手加速。刹车力度超过 <strong>1612</strong> 就会断裂 ——
+          在弯道与极限之间，寻找那条唯一的生路。
+        </p>
+        <ul class="game-card__tags">
+          <li class="chip">#Canvas</li>
+          <li class="chip">#TypeScript</li>
+          <li class="chip">#手感调教</li>
+        </ul>
+
+        <div class="game-card__actions">
+          <a
+            class="btn btn--primary"
+            href="https://redline-1612n.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            即刻试玩
+            <svg
+              class="btn__icon"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M7 17 17 7" />
+              <path d="M8 7h9v9" />
+            </svg>
+          </a>
+          <a class="btn btn--ghost" href="/game">
+            查看详情
+            <svg
+              class="btn__icon"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ 标签云 ============ -->
+  {
+    topTags.length > 0 && (
+      <section class="wrap section">
+        <div class="section-head reveal">
+          <h2 class="section-head__title">标记索引</h2>
+          <span class="section-head__line" />
+          <a class="section-head__more" href="/tags">全部标签 →</a>
+        </div>
+
+        <ul class="tag-cloud reveal">
+          {topTags.map(([tag, count]) => (
+            <li>
+              <a class="chip chip--amber" href={`/tags/${encodeURIComponent(tag)}/`}>
+                #{tag}
+                <span class="tag-cloud__count">{count}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative;
+    padding: 96px 0 28px;
+    text-align: center;
+  }
+
+  .hero__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 22px;
+    padding: 5px 15px;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--neon-gold);
+    background: rgba(124, 45, 18, 0.07);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+  }
+
+  .hero__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--neon-gold);
+    box-shadow: var(--glow-gold);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.75); }
+  }
+
+  .hero__title {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: clamp(34px, 7.4vw, 68px);
+    font-weight: 900;
+    line-height: 1.12;
+    letter-spacing: 0.06em;
+    background: linear-gradient(100deg, #7c2d12 0%, #92400e 42%, #78350f 78%, #a16207 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 26px rgba(156, 61, 46, 0.55));
+  }
+
+  /* 移动端：渐变文字 + 模糊伪元素在 iOS 上会发虚，改用纯色实心字 */
+  @media (max-width: 760px) {
+    .hero__title {
+      background: none;
+      -webkit-background-clip: border-box;
+      background-clip: border-box;
+      color: var(--neon-gold);
+      filter: none;
+    }
+
+    .hero__title .glitch::before,
+    .hero__title .glitch::after {
+      display: none;
+    }
+  }
+
+  .hero__subtitle {
+    margin: 0 0 22px;
+    font-size: 12.5px;
+    letter-spacing: 0.2em;
+    color: var(--neon-amber);
+  }
+
+  .hero__incantation {
+    max-width: 620px;
+    margin: 0 0 46px;
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--text-muted);
+  }
+
+  .hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hero__stat {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    padding: 10px 20px;
+    background: rgba(249, 243, 230, 0.55);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .hero__stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--neon-gold);
+    text-shadow: var(--glow-gold);
+  }
+
+  .hero__stat-label {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+  }
+
+  /* ---------- 区块 ---------- */
+  .section {
+    margin-top: 48px;
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+  }
+
+  /* ---------- 游戏卡片 ---------- */
+  .game-card {
+    display: block;
+    overflow: hidden;
+    color: inherit;
+  }
+
+  .game-card__body {
+    padding: 26px 28px;
+  }
+
+  .game-card__kicker {
+    margin: 0 0 10px;
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    color: var(--neon-amber);
+  }
+
+  .game-card__title {
+    margin: 0 0 12px;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .game-card__link {
+    color: inherit;
+    transition: color 0.22s ease;
+  }
+
+  .game-card__link:hover {
+    color: var(--neon-ember);
+    text-shadow: none;
+  }
+
+  .game-card__desc {
+    margin: 0 0 16px;
+    font-size: 14.5px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .game-card__desc strong {
+    color: var(--neon-gold);
+  }
+
+  .game-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 0 0 18px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .game-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 760px) {
+    .game-card__body {
+      padding: 22px 20px;
+    }
+  }
+
+  /* ---------- 标签云 ---------- */
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tag-cloud__count {
+    margin-left: 3px;
+    padding: 0 5px;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    background: rgba(90, 62, 30, 0.08);
+    border-radius: 999px;
+  }
+</style>

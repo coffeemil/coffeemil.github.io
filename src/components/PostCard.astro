@@ -1,0 +1,173 @@
+---
+import { CHUNIBYO_LEVELS } from '../consts';
+
+interface Props {
+  href: string;
+  title: string;
+  description: string;
+  pubDate: Date;
+  tags?: string[];
+  category?: string;
+  chunibyo?: number;
+  /** 序号，用于显示 #01 之类的编号 */
+  index?: number;
+}
+
+const {
+  href,
+  title,
+  description,
+  pubDate,
+  tags = [],
+  category,
+  chunibyo = 3,
+  index,
+} = Astro.props;
+
+const dateStr = pubDate.toISOString().slice(0, 10);
+const levelText = CHUNIBYO_LEVELS[chunibyo] ?? '工笔';
+---
+
+<article class="post-card panel panel--hover corner-frame reveal">
+  <a class="post-card__link" href={href} aria-label={title}>
+    <div class="post-card__meta">
+      {index !== undefined && <span class="post-card__index mono">#{String(index).padStart(2, '0')}</span>}
+      <time class="post-card__date mono" datetime={pubDate.toISOString()}>{dateStr}</time>
+      {category && <span class="post-card__cat">{category}</span>}
+      <span class="post-card__level" title={`笔记等级 ${chunibyo}/5`}>
+        {'★'.repeat(chunibyo)}<span class="post-card__level-dim">{'★'.repeat(5 - chunibyo)}</span>
+        <em>{levelText}</em>
+      </span>
+    </div>
+
+    <h3 class="post-card__title">{title}</h3>
+    <p class="post-card__desc">{description}</p>
+
+    {
+      tags.length > 0 && (
+        <ul class="post-card__tags">
+          {tags.slice(0, 4).map((tag) => (
+            <li class="chip chip--amber">#{tag}</li>
+          ))}
+        </ul>
+      )
+    }
+
+    <span class="post-card__arrow mono" aria-hidden="true">阅读全文 →</span>
+  </a>
+</article>
+
+<style>
+  .post-card {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .post-card__link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 22px 24px 20px;
+    color: inherit;
+  }
+
+  .post-card__link:hover {
+    color: inherit;
+    text-shadow: none;
+  }
+
+  .post-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .post-card__index {
+    color: var(--neon-amber);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .post-card__cat {
+    padding: 1px 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text-secondary);
+  }
+
+  .post-card__level {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--neon-gold);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .post-card__level-dim {
+    color: var(--text-dim);
+  }
+
+  .post-card__level em {
+    font-style: normal;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    letter-spacing: 0;
+  }
+
+  .post-card__title {
+    margin: 0 0 10px;
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.45;
+    color: var(--text-primary);
+    transition: color 0.22s ease, text-shadow 0.22s ease;
+  }
+
+  .post-card:hover .post-card__title {
+    color: var(--neon-gold);
+    text-shadow: var(--glow-gold);
+  }
+
+  .post-card__desc {
+    margin: 0 0 16px;
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .post-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .post-card__arrow {
+    display: inline-block;
+    margin-top: auto;
+    padding-top: 16px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    transition: color 0.22s ease, transform 0.22s ease;
+  }
+
+  .post-card:hover .post-card__arrow {
+    color: var(--neon-ember);
+    transform: translateX(5px);
+  }
+</style>

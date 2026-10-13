@@ -1,0 +1,99 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+const years = new Map<number, number>();
+for (const p of posts) {
+  const y = p.data.pubDate.getFullYear();
+  years.set(y, (years.get(y) ?? 0) + 1);
+}
+---
+
+<BaseLayout title="文章" description="全部文章 —— 术术札记与随笔">
+  <div class="wrap page-head">
+    <p class="page-head__kicker mono">「档 案 库」</p>
+    <h1 class="page-head__title">文章档案</h1>
+    <p class="page-head__desc">
+      共 <strong>{posts.length}</strong> 篇记录，跨越 {years.size} 个年份。
+    </p>
+  </div>
+
+  <div class="wrap">
+    {
+      posts.length > 0 ? (
+        <div class="post-grid">
+          {posts.map((post, i) => (
+            <PostCard
+              href={`/posts/${post.id}/`}
+              title={post.data.title}
+              description={post.data.description}
+              pubDate={post.data.pubDate}
+              tags={post.data.tags}
+              category={post.data.category}
+              chunibyo={post.data.chunibyo}
+              index={posts.length - i}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="empty mono">边界之内，尚无记录……</p>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .page-head {
+    padding: 56px 24px 40px;
+    text-align: center;
+  }
+
+  .page-head__kicker {
+    margin: 0 0 12px;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--neon-amber);
+  }
+
+  .page-head__title {
+    margin: 0 0 14px;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 6vw, 46px);
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    background: linear-gradient(100deg, #7c2d12, #92400e 55%, #78350f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 20px rgba(156, 61, 46, 0.45));
+  }
+
+  .page-head__desc {
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--text-muted);
+  }
+
+  .page-head__desc strong {
+    color: var(--neon-gold);
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+  }
+</style>
